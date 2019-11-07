@@ -177,32 +177,142 @@ public class UserService {
 
 @Builder
 ---
-Annotation created by [lombok](https://projectlombok.org/), marks a class to create a static inner class after the Builder design pattern. 
+Annotation created by [lombok](https://projectlombok.org/), marks a class to create a static inner class implementing the Builder design pattern. 
+
+Also, in the example below, we will find __@Singular__ if we want for a Collection field to add members one by one and __@Builder.Default__ if we want a default value for a field.
 
 ```java
+@Builder
+public class Pizza {
 
+    @Singular private List<String> toppings;
+    @Builder.Default private String sauce = "Ketchup";
+    private long radius;
+    private int price;
+    private boolean isSpecialOffer;
+}
 ```
 
-```java
+The code from above generates the following [Pizza.class](Pizza.java) and the following behaviour.
 
+```java
+ List<String> toppings = Arrays.asList("Corn", "Ananas", "Bacon");
+Pizza pizza = Pizza.builder()
+        .price(100)
+        .toppings(toppings)
+        .topping("Mushroom")
+        .topping("Tomato")
+        //.sauce("Mayo")
+        .build();
 ```
 
 @EnableScheduling
 ---
+Annotation used to activate the [@Scheduled](#scheduled) methods. Can be used for either the SpringApplication main class, or any [@Component](#component). One annotation is enough for all the methods to trigger.
 
+```java
+@Configuration
+@EnableScheduling
+public class SchedulingConfiguration {
+}
+```
 
 @Scheduled
 ---
+Annotation used to mark a method that should run multiple times, at fixed delay, and an initial delay, both in miliseconds.
+
+```java
+@Scheduled(fixedDelay = 1000, initialDelay = 1000)
+public void deleteLogs(){
+    // delete the logs
+}
+```
+
 @Profile
 ---
+Annotation used to mark components that should only be instantiated when running a specific profile.
+
+```java
+@Component
+@Profile("dev")
+public class Logger{
+}
+```
+The above class will be instatiated only when the profile is setted to __dev__.
+```properties
+spring.profiles.active=dev
+```
+
 @Transactional
 ---
+Annotation used for the Repository interfaces, to enable ```fetch = FetchType.LAZY``` on __[@OneToMany]()__, __[@OneToOne]()__, __[@ManyToOne]()__ and __[@ManyToMany]()__, marks a field that can be fetched later from the database
+```java
+@Transactional
+public interface HumanRepository extends JpaRepository<Human, Long>{
+}
+```
+
 @Data
 ---
+Annotation created by [lombok](https://projectlombok.org/), marks a class to create a getters, settes, toString, equals and hashcode at compile time.
+```java
+@Data
+public class Human {
+    private long id;
+    private String name;
+    private int age;
+}
+```
+
 @Valid
 ---
+Annotation used to check if a http resource sent to a [@RestController](#restcontroller) is valid
+```java
+@ValidHuman
+public class Human {
+    private int age;
+    private String name;
+    // ... constructors, getters, setters
+}
+```
+```java
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = HumanValidator.class)
+public @interface ValidHuman {
+
+    String message() default "Human is not valid";
+
+    Class<?>[] groups() default { };
+
+    Class<? extends Payload>[] payload() default { };
+}
+```
+```java
+public class HumanValidator implements ConstraintValidator<ValidHuman, Human> {
+
+    @Override
+    public void initialize(ValidHuman constraintAnnotation) {
+    }
+
+    @Override
+    public boolean isValid(Human value, ConstraintValidatorContext context) {
+        return value.getAge() > 0 && !value.getName().equals("");
+    }
+}
+```
+Usage:
+```java
+@PostMapping
+    public void save(@RequestBody @Valid Human human){
+        // save to database
+    }
+```
+
 @Constraint
 ---
+See [@Valid](#valid).
 
 @GetMapping
 ---
@@ -218,29 +328,69 @@ Annotation created by [lombok](https://projectlombok.org/), marks a class to cre
 ---
 @EnableSecurity
 ---
-@PreDestroy
----
-@PrePersist
----
-@Column
----
-@Entity
----
-@Table
----
-@Enumerated
----
-@Column
----
-@Query
----
-@Data
----
-@ToString
----
-@EqualsAndHashcode
----
-@RabbitListener
----
+Annotation used to enable web security, role based.
+Can be used for either the SpringApplication main class, or any [@Component](#component). One annotation is enough for all the methods to trigger.
+
 @RolesAllowed
 ---
+Annotation used to mark a class or method that should run only if the current user has one of the roles.
+It is the same as __@Secured__.
+
+```java
+@RolesAllowed({"ROLE_ADMIN", "ROLE_USER}")
+public void createNote(){
+    // ... create note here
+}
+```
+
+@PrePersist
+---
+Annotation marking a method that should run before an entity is saved into the database.
+
+@Column
+---
+Annotation decorating a field of an [@Entity](#entity) that should be stored in the database.
+Can be specified: 
+1. name
+2. nullable
+3. unique
+
+
+
+@Entity
+---
+Annotation used to mark classes that should be stored in the database.
+
+@Id
+---
+Annotation used to mark the primary key of a __@Entity__.
+If it is a number, __@GeneratedValue__ can be used to automatically generate a new value.
+
+@Table
+---
+Annotation used to decorate classes that should be stored in the database.
+The following can be specified
+1. name
+2. schema
+
+@Enumerated
+---
+Annotation used to mark a field that is an enum, or collection of enums. It has to be used together with __@ElementCollection__.
+
+```java
+@Enumerated
+@ElementCollection(targetClass = Role.class)
+private Set<Role> roles = new HashSet<>();
+```
+
+@Query
+---
+Annotation used to describe the __SQL__ command of an method, if it can not be automatically generated.
+
+```java
+public interface HumanRepository extends JpaRepository<Human, Long>{
+    @Query("select h from human h")
+    List<Human> findAll();
+
+}
+```
