@@ -1,6 +1,7 @@
 UNI10
 ---
 
-## Idea
+## Idea :bulb:
 
-A web platform for students and teachers, designed to ease the process of learning.
+A web platform for students and teachers, designed to ease the process of learning :books:.
+
